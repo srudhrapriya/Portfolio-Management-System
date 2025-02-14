@@ -1,0 +1,364 @@
+Complex queries based on the concepts of constraints, sets, joins,
+
+views, Triggers and Cursors.
+
+1. CLIENT TABLE
+CREATE TABLE Client (
+Client_ID int(50) PRIMARY KEY,
+Name varchar(50),
+Phone varchar(50),
+Email varchar(50),
+Address varchar(50));
+2. BROKER TABLE
+CREATE TABLE Broker (
+Broker_ID int(50) PRIMARY KEY,
+Name varchar(50),
+License varchar(50));
+3. TRANSACTION TABLE
+CREATE TABLE Transactions (
+Transaction_ID INT(50) PRIMARY KEY,
+Client_ID INT(50),
+Broker_ID INT(50),
+Type VARCHAR(10),
+Price DECIMAL(30),
+FOREIGN KEY (Client_ID) REFERENCES Client(Client_ID),
+FOREIGN KEY (Broker_ID) REFERENCES Broker(Broker_ID)
+);
+4. TAX TABLE
+CREATE TABLE Tax (
+Client_ID INT(50),
+Broker_ID INT(50),
+Profit DECIMAL(20),
+Loss DECIMAL(20),
+Tax DECIMAL(20),
+FOREIGN KEY (Client_ID) REFERENCES Client(Client_ID),
+FOREIGN KEY (Broker_ID) REFERENCES Broker(Broker_ID)
+);
+
+17
+
+5. DOCUMENTS
+CREATE TABLE Documents (
+Documents_ID INT(50) PRIMARY KEY,
+Client_ID INT(50),
+Broker_ID INT(5),
+Document_Type VARCHAR(50),
+Date_Uploaded DATE,
+FOREIGN KEY (Client_ID) REFERENCES Client(Client_ID),
+FOREIGN KEY (Broker_ID) REFERENCES Broker(Broker_ID)
+);
+6. Markets
+Create table market(
+Market _ID int(50) PRIMARY KEY,
+Client_ID int(50),
+Name varchar(50),
+Location varchar(50));
+
+7. STOCKS TABLE
+CREATE TABLE Stocks (
+Stock_ID INT(50) PRIMARY KEY,
+Market_ID INT(50),
+Symbol VARCHAR(10),
+Name VARCHAR(50),
+Last_Traded_Price DECIMAL(20),
+High_Low_52w VARCHAR(50),
+High_Low_Day VARCHAR(50),
+FOREIGN KEY (Market_ID) REFERENCES Market(Market_ID)
+);
+8. CREATE TABLE Mutual_Funds (
+Mutual_Funds_ID int(50) PRIMARY KEY,
+Name VARCHAR(50),
+Symbol VARCHAR(50),
+Price DECIMAL,
+Quantity int(50)
+);
+
+18
+
+9. INVESTMENTS
+CREATE TABLE Investments (
+Investment_ID INT PRIMARY KEY,
+Market_ID int(50),
+Name VARCHAR(50),
+Stock_ID int(50),
+Mutual_Funds_ID int(50),
+FOREIGN KEY (Market_ID) REFERENCES Market(Market_ID),
+FOREIGN KEY (Stock_ID) REFERENCES Stocks(Stock_ID),
+FOREIGN KEY (Mutual_Funds_ID) REFERENCES
+Mutual_Funds(Mutual_Funds_ID)
+);
+10. PORTFOLIO TABLE
+CREATE TABLE Portfolio (
+Portfolio_ID INT(50) PRIMARY KEY,
+Client_ID INT(50),
+Investment_ID INT(50),
+Average_Price DECIMAL(50),
+Quantity INT(50),
+FOREIGN KEY (Client_ID) REFERENCES Client(Client_ID),
+FOREIGN KEY (Investment_ID) REFERENCES Investments(Investment_ID)
+);
+
+11. WATCHLIST
+CREATE TABLE Watchlist (
+Watchlist_ID INT(50) PRIMARY KEY,
+Client_ID INT(50),
+Investment_ID INT(50),
+FOREIGN KEY (Client_ID) REFERENCES Client(Client_ID),
+FOREIGN KEY (Investment_ID) REFERENCES Investments(Investment_ID)
+);
+
+12. TRIGGER PRICE
+CREATE TABLE Trigger_Price (
+Alert_ID INT PRIMARY KEY,
+Watchlist_ID INT(50),
+Trigger_Condition VARCHAR(50),
+
+19
+
+Trigger_Price DECIMAL(20),
+Notification_Type VARCHAR(50),
+FOREIGN KEY (Watchlist_ID) REFERENCES Watchlist(Watchlist_ID)
+);
+
+13. ORDERS
+CREATE TABLE Orders (
+Order_ID int(50) PRIMARY KEY,
+Client_ID int(50),
+Broker_ID int(50),
+Transaction_ID int(50),
+Investment_ID int(50),
+Status VARCHAR(50),
+Price DECIMAL(50),
+Quantity int(50),
+FOREIGN KEY (Client_ID) REFERENCES Client(Client_ID),
+FOREIGN KEY (Broker_ID) REFERENCES Broker(Broker_ID),
+FOREIGN KEY (Transaction_ID) REFERENCES Transactions(Transaction_ID),
+FOREIGN KEY (Investment_ID) REFERENCES Investments(Investment_ID)
+);
+
+14. CREATE TABLE Insights (
+Client_ID int(50),
+Stock_ID int(50),
+Mutual_Funds_ID int(50),
+Market_ID int(50),
+Profit DECIMAL,
+Loss DECIMAL,
+Total_PL DECIMAL,
+FOREIGN KEY (Client_ID) REFERENCES Client(Client_ID),
+FOREIGN KEY (Stock_ID) REFERENCES Stocks(Stock_ID),
+FOREIGN KEY (Mutual_Funds_ID) REFERENCES
+Mutual_Funds(Mutual_Funds_ID),
+FOREIGN KEY (Market_ID) REFERENCES Market(Market_ID)
+);
+
+20
+
+15. CREATE TABLE IPO (
+IPO_ID int(50) PRIMARY KEY,
+Name VARCHAR(50),
+Symbol VARCHAR(10),
+Date_Range DATE,
+Price DECIMAL,
+Quantity int(50)
+);
+
+3.2Queries for views
+
+CREATE VIEW Order_Details AS
+SELECT o.Order_ID, c.Name AS Client_Name, i.Name AS Investment_Name, o.Status,
+o.Price, o.Quantity
+FROM Orders o
+JOIN Client c ON o.Client_ID = c.Client_ID
+JOIN Investment i ON o.Investment_ID = i.Investment_ID;
+–CREATE VIEW Client_Investment_Info AS
+SELECT c.Client_ID, c.Name AS Client_Name, i.Investment_ID, i.Name AS Investment_Name
+FROM Client c
+JOIN Investments i ON c.Client_ID = i.Client_ID;
+CREATE VIEW Investment_Total_Value AS
+SELECT i.Investment_ID, i.Name AS Investment_Name, SUM(o.Price * o.Quantity) AS
+Total_Value
+FROM Orders o
+JOIN Investment i ON o.Investment_ID = i.Investment_ID
+GROUP BY i.Investment_ID, i.Name;
+CREATE VIEW Investment_Order_Details AS
+SELECT
+o.Order_ID,
+o.Client_ID,
+o.Broker_ID,
+
+21
+
+o.Transaction_ID,
+o.Status AS Order_Status,
+o.Price AS Order_Price,
+o.Quantity AS Order_Quantity,
+i.Investment_ID,
+i.Name AS Investment_Name,
+i.Market_ID,
+i.Stock_ID,
+i.Mutual_Funds_ID
+FROM
+Orders o
+JOIN
+Investments i ON o.Investment_ID = i.Investment_ID;
+CREATE VIEW Client_Transactions_View AS
+SELECT
+t.Transaction_ID,
+t.Client_ID,
+c.Name AS Client_Name,
+c.Phone AS Client_Phone,
+c.Email AS Client_Email,
+c.Address AS Client_Address,
+t.Broker_ID,
+t.Type,
+t.Price
+FROM
+Transactions t
+JOIN
+Client c ON t.Client_ID = c.Client_ID;
+CREATE VIEW Broker_Transactions_View AS
+SELECT
+t.Transaction_ID,
+t.Client_ID,
+t.Broker_ID,
+b.Name AS Broker_Name,
+t.Type,
+t.Price
+FROM
+
+22
+
+Transactions t
+JOIN
+Broker b ON t.Broker_ID = b.Broker_ID;
+
+3.3 Queries for joints-
+Inner join-
+SELECT *
+
+FROM Transactions AS t
+INNER JOIN Client AS c ON t.Client_ID = c.Client_ID;
+SELECT *
+FROM Transactions AS t
+INNER JOIN Broker AS b ON t.Broker_ID = b.Broker_ID;
+
+Left join-
+SELECT *
+
+FROM Portfolio AS p
+LEFT JOIN Investments AS i ON p.Investment_ID = i.Investment_ID;
+SELECT *
+FROM portfolio AS p
+LEFT JOIN client AS i ON p.client_id=c.client_id;
+
+Right join-
+SELECT *
+
+FROM Client AS c
+RIGHT JOIN Portfolio AS p ON c.Client_ID = p.Client_ID;
+SELECT *
+FROM Client AS c
+RIGHT JOIN Transaction AS t ON c.Client_ID = t.Client_ID;
+
+3.4Queries for triggers-
+client-
+
+23
+
+DELIMITER //
+CREATE TRIGGER generate_client_id BEFORE INSERT ON Client
+FOR EACH ROW
+BEGIN
+DECLARE new_client_id int(50);
+SET new_client_id = (SELECT IFNULL(MAX(Client_ID), 0) + 1 FROM Client);
+SET NEW.Client_ID = new_client_id;
+END;
+//
+DELIMITER ;
+DELIMITER //
+CREATE TRIGGER check_name_not_empty
+BEFORE INSERT ON Client
+FOR EACH ROW
+BEGIN
+IF NEW.Name IS NULL OR NEW.Name = '' THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'Name cannot be empty';
+END IF;
+END;
+//
+DELIMITER ;
+
+broker-
+CREATE TRIGGER check_broker_id_range BEFORE INSERT ON Broker
+
+FOR EACH ROW
+BEGIN
+IF NEW.Broker_ID < 1 OR NEW.Broker_ID > 50 THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'Broker ID must be between 1 and 50';
+END IF;
+END;
+CREATE TRIGGER check_license_not_null BEFORE INSERT ON Broker
+FOR EACH ROW
+
+24
+
+BEGIN
+IF NEW.License IS NULL THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'License cannot be NULL';
+END IF;
+END;
+
+Portfolio-
+DELIMITER //
+
+CREATE TRIGGER check_average_price_positive
+BEFORE INSERT ON Portfolio
+FOR EACH ROW
+BEGIN
+IF NEW.Average_Price < 0 THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'Average price cannot be negative';
+END IF;
+END;
+//
+CREATE TRIGGER check_quantity_positive
+BEFORE INSERT ON Portfolio
+FOR EACH ROW
+BEGIN
+IF NEW.Quantity < 0 THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'Quantity cannot be negative';
+END IF;
+END;
+//
+DELIMITER ;
+
+TRANSACTIONS-
+DELIMITER //
+
+CREATE TRIGGER check_type_length
+BEFORE INSERT ON Transactions
+
+25
+
+FOR EACH ROW
+BEGIN
+IF LENGTH(NEW.Type) > 10 THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'Transaction type length exceeds the limit';
+END IF;
+END;
+//
+CREATE TRIGGER check_price_nonnegative
+BEFORE INSERT ON Transactions
+FOR EACH ROW
+BEGIN
+IF NEW.Price < 0 THEN
+SIGNAL SQLSTATE '45000'
+SET MESSAGE_TEXT = 'Price cannot be negative';
+END IF;
+END;
+//
+DELIMITER ;
